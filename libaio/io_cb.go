@@ -18,7 +18,6 @@ const (
 	IOCmdPwritev
 )
 
-// https://www.man7.org/linux/man-pages/man2/io_submit.2.html
 type IOCB struct {
 	data      unsafe.Pointer
 	key       uint64
