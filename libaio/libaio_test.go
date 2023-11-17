@@ -1,41 +1,54 @@
 package libaio
 
 import (
-	"errors"
 	goaio "go-aio"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
-func TestOpen(t *testing.T) {
-	ctx, err := OpenAIOCtx("/tmp/aio-test", Options{
+func TestLibAIOTestSuite(t *testing.T) {
+	suite.Run(t, new(LibAIOTestSuite))
+}
+
+type LibAIOTestSuite struct {
+	suite.Suite
+}
+
+const (
+	SIZE_4K = 4096
+)
+
+func (s *LibAIOTestSuite) openAIOCtx(fpath string) goaio.IOCtx {
+	ctx, err := OpenAIOCtx(fpath, Options{
 		IODepth: 1024,
 		Flag:    os.O_CREATE | os.O_RDWR | os.O_SYNC,
 		Perm:    0644,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ctx == nil {
-		t.Fatal(errors.New("open aio ctx failed"))
-	}
+	s.Nil(err)
+	s.NotNil(ctx)
+	return ctx
+}
 
-	buf, err := goaio.PosixMemAlign(4096, 4096)
-	if err != nil {
-		t.Fatal(err)
-	}
+func (s *LibAIOTestSuite) TestWriteAt() {
+	fpath := "/tmp/aio-test"
+	ctx := s.openAIOCtx(fpath)
+	buf, err := goaio.PosixMemAlign(SIZE_4K, SIZE_4K)
+	s.Nil(err)
 
-	buf[0] = 1
-	buf[1] = 2
-	buf[2] = 3
-	buf[3] = 4
+	copy(buf, []byte("hello, aio"))
+
 	_, err = ctx.WriteAt(buf, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	s.Nil(err)
 
 	err = ctx.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
+	s.Nil(err)
+
+	data, err := os.ReadFile(fpath)
+	s.Nil(err)
+
+	s.Equal(buf, data)
+	err = os.Remove(fpath)
+	s.Nil(err)
 }

@@ -7,6 +7,7 @@ import (
 
 const AlignSize = 4096
 
+// 仿clang里的posix_memalign函数，用于分配内存对齐的buf
 func PosixMemAlign(blockSize, alignSize uint) ([]byte, error) {
 	// 判断blockSize是否是2的幂
 	if alignSize != 0 && blockSize&(alignSize-1) != 0 {
