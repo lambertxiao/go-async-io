@@ -2,7 +2,7 @@ package libaio
 
 import (
 	"errors"
-	goaio "go-aio"
+	goaio "go-async-io"
 	"log"
 	"os"
 	"sync"

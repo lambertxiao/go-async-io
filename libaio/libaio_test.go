@@ -1,7 +1,7 @@
 package libaio
 
 import (
-	goaio "go-aio"
+	goaio "go-async-io"
 	"os"
 	"strings"
 	"testing"
