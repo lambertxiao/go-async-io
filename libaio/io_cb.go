@@ -35,14 +35,14 @@ func (cb *IOCB) prepareWrite(buf []byte, offset int64) {
 	cb.offset = offset
 }
 
-// func bytes2Iovec(bs [][]byte) []syscall.Iovec {
-// 	var iovecs []syscall.Iovec
-// 	for _, chunk := range bs {
-// 		if len(chunk) == 0 {
-// 			continue
-// 		}
-// 		iovecs = append(iovecs, syscall.Iovec{Base: &chunk[0]})
-// 		iovecs[len(iovecs)-1].SetLen(len(chunk))
-// 	}
-// 	return iovecs
-// }
+func (cb *IOCB) prepareRead(buf []byte, offset int64) {
+	if len(buf) <= 0 {
+		return
+	}
+
+	p := unsafe.Pointer(&buf[0])
+	cb.opcode = int16(IOCmdPread)
+	cb.buf = p
+	cb.nbytes = uint64(len(buf))
+	cb.offset = offset
+}

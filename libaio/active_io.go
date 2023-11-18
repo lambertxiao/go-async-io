@@ -4,9 +4,9 @@ import "sync"
 
 // 用于绑定IO和对应的CB
 type ActiveIO struct {
-	cb          *IOCB
-	state       sync.WaitGroup
-	submitBytes int64
+	cb       *IOCB
+	state    sync.WaitGroup
+	retBytes int64
 }
 
 func newActiveIO(cb *IOCB) *ActiveIO {

@@ -16,6 +16,7 @@ type AIOCtx struct {
 	fd      *os.File
 	ioctx   uint // 由内核libaio填充该iocxt
 	woff    int64
+	roff    int64
 	events  []IOEvent
 	timeout timespec
 
@@ -118,7 +119,7 @@ func (c *AIOCtx) parseDoneEvent(event IOEvent) error {
 		return errors.New("event cb is not found")
 	}
 
-	io.submitBytes = event.res
+	io.retBytes = event.res
 	io.Done()
 	return nil
 }
@@ -129,6 +130,8 @@ func (c *AIOCtx) submitIO(cmd IOCmd, data []byte, off int64) (n int, err error) 
 	switch cmd {
 	case IOCmdPwrite:
 		cb.prepareWrite(data, off)
+	case IOCmdPread:
+		cb.prepareRead(data, off)
 	default:
 		return 0, errors.New("unsupport cmd")
 	}
@@ -141,7 +144,7 @@ func (c *AIOCtx) submitIO(cmd IOCmd, data []byte, off int64) (n int, err error) 
 	}
 
 	acio.Wait()
-	return int(acio.submitBytes), nil
+	return int(acio.retBytes), nil
 }
 
 func (c *AIOCtx) Write(p []byte) (n int, err error) {
@@ -158,11 +161,16 @@ func (c *AIOCtx) WriteAt(p []byte, off int64) (n int, err error) {
 }
 
 func (c *AIOCtx) Read(p []byte) (n int, err error) {
-	return 0, nil
+	n, err = c.ReadAt(p, c.woff)
+	if err != nil {
+		return n, err
+	}
+	c.roff += int64(n)
+	return n, nil
 }
 
 func (c *AIOCtx) ReadAt(p []byte, off int64) (n int, err error) {
-	return 0, nil
+	return c.submitIO(IOCmdPread, p, off)
 }
 
 func (c *AIOCtx) Close() error {
