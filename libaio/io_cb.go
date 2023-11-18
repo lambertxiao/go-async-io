@@ -5,19 +5,6 @@ import (
 	"unsafe"
 )
 
-type IOCmd int16
-
-const (
-	IOCmdPread IOCmd = iota
-	IOCmdPwrite
-	IOCmdFSync
-	IOCmdFDSync
-	IOCmdPoll
-	IOCmdNoop
-	IOCmdPreadv
-	IOCmdPwritev
-)
-
 type IOCB struct {
 	data      unsafe.Pointer
 	key       uint64

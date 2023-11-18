@@ -31,7 +31,7 @@ func syscall_submit(ioctx uint, cb *IOCB) error {
 	if err != 0 {
 		return os.NewSyscallError("IO_SUBMIT", err)
 	}
-	return err
+	return nil
 }
 
 // https://www.man7.org/linux/man-pages/man2/io_getevents.2.html

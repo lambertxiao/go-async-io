@@ -25,6 +25,7 @@ func (s *LibAIOTestSuite) openAIOCtx(fpath string) goaio.IOCtx {
 		IODepth: 1024,
 		Flag:    os.O_CREATE | os.O_RDWR | os.O_SYNC,
 		Perm:    0644,
+		Timeout: 10,
 	})
 	s.Nil(err)
 	s.NotNil(ctx)
@@ -39,8 +40,9 @@ func (s *LibAIOTestSuite) TestWriteAt() {
 
 	copy(buf, []byte("hello, aio"))
 
-	_, err = ctx.WriteAt(buf, 0)
+	n, err := ctx.WriteAt(buf, 0)
 	s.Nil(err)
+	s.Equal(SIZE_4K, n)
 
 	err = ctx.Close()
 	s.Nil(err)
@@ -49,6 +51,34 @@ func (s *LibAIOTestSuite) TestWriteAt() {
 	s.Nil(err)
 
 	s.Equal(buf, data)
+	err = os.Remove(fpath)
+	s.Nil(err)
+}
+
+func (s *LibAIOTestSuite) TestWrite() {
+	fpath := "/tmp/aio-test"
+	ctx := s.openAIOCtx(fpath)
+	buf, err := goaio.PosixMemAlign(SIZE_4K, SIZE_4K)
+	s.Nil(err)
+
+	copy(buf, []byte("hello, aio"))
+
+	n, err := ctx.Write(buf)
+	s.Nil(err)
+	s.Equal(SIZE_4K, n)
+
+	n, err = ctx.Write(buf)
+	s.Nil(err)
+	s.Equal(SIZE_4K, n)
+
+	err = ctx.Close()
+	s.Nil(err)
+
+	data, err := os.ReadFile(fpath)
+	s.Nil(err)
+
+	s.Equal(append(buf, buf...), data)
+
 	err = os.Remove(fpath)
 	s.Nil(err)
 }

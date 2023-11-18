@@ -4,7 +4,7 @@ import "unsafe"
 
 type IOEvent struct {
 	data unsafe.Pointer
-	obj  *IOCB
+	cb   *IOCB
 	res  int64
 	res2 int64
 }
