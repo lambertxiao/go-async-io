@@ -3,6 +3,7 @@ package iouring
 type io_uring_sq struct {
 	ring_sz  uint32
 	ring_ptr uintptr
+	sqes     []io_uring_sqe
 }
 
 type io_uring_cq struct {
@@ -25,6 +26,8 @@ type io_uring_cqe struct {
 	//  */
 	// __u64 big_cqe[]
 }
+
+type io_uring_sqe struct{}
 
 // /*
 //  * IO submission data structure (Submission Queue Entry)

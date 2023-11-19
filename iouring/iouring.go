@@ -45,17 +45,25 @@ func (c *IOUringCtx) mmapIOUring() error {
 	sq.ring_sz = c.params.sq_off.array + c.params.sq_entries*uint32(unsafe.Sizeof(uint32(0)))
 	cq.ring_sz = c.params.cq_off.cqes + c.params.cq_entries*uint32(unsafe.Sizeof(io_uring_cqe{}))
 
-	ring_ptr, err := syscall_mmap(c.ring_fd, sq.ring_sz, IORING_OFF_SQ_RING)
+	ptr, err := syscall_mmap(c.ring_fd, sq.ring_sz, IORING_OFF_SQ_RING)
 	if err != nil {
 		return err
 	}
-	sq.ring_ptr = ring_ptr
+	sq.ring_ptr = ptr
 
-	ring_ptr, err = syscall_mmap(c.ring_fd, cq.ring_sz, IORING_OFF_CQ_RING)
+	ptr, err = syscall_mmap(c.ring_fd, cq.ring_sz, IORING_OFF_CQ_RING)
 	if err != nil {
 		return err
 	}
-	cq.ring_ptr = ring_ptr
+	cq.ring_ptr = ptr
+
+	size := uint32(unsafe.Sizeof(io_uring_sqe{}))
+	ptr, err = syscall_mmap(c.ring_fd, size*c.params.sq_entries, IORING_OFF_SQES)
+	if err != nil {
+		return err
+	}
+
+	c.sq.sqes = *(*[]io_uring_sqe)(unsafe.Pointer(ptr))
 
 	return nil
 }
