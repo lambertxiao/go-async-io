@@ -6,6 +6,7 @@ import (
 	"unsafe"
 )
 
+// https://www.man7.org/linux/man-pages/man2/io_setup.2.html
 func syscall_iosetup(ioctx *uint, numEvents int) error {
 	_, _, errno := syscall.Syscall(syscall.SYS_IO_SETUP, uintptr(numEvents), uintptr(unsafe.Pointer(ioctx)), 0)
 	if errno != 0 {
@@ -15,6 +16,7 @@ func syscall_iosetup(ioctx *uint, numEvents int) error {
 	return nil
 }
 
+// https://www.man7.org/linux/man-pages/man2/io_destroy.2.html
 func syscall_destory(ioctx uint) error {
 	_, _, err := syscall.Syscall(syscall.SYS_IO_DESTROY, uintptr(ioctx), 0, 0)
 	if err != 0 {
