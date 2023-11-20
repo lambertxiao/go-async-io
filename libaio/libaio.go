@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-type AIOCtx struct {
+type AsyncIOCtx struct {
 	fd      *os.File
 	ioctx   uint // 由内核libaio填充该iocxt
 	woff    int64
@@ -33,7 +33,7 @@ type Options struct {
 	Timeout int
 }
 
-func OpenAIOCtx(fpath string, opts Options) (goaio.IOCtx, error) {
+func New(fpath string, opts Options) (goaio.IOCtx, error) {
 	fd, err := os.OpenFile(fpath, syscall.O_DIRECT|opts.Flag, opts.Perm)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func OpenAIOCtx(fpath string, opts Options) (goaio.IOCtx, error) {
 	}
 	events := make([]IOEvent, opts.IODepth)
 
-	ctx := &AIOCtx{
+	ctx := &AsyncIOCtx{
 		fd:        fd,
 		ioctx:     ioctx,
 		events:    events,
@@ -64,7 +64,7 @@ func OpenAIOCtx(fpath string, opts Options) (goaio.IOCtx, error) {
 	return ctx, nil
 }
 
-func (c *AIOCtx) makeActiveIO(cb *IOCB) *ActiveIO {
+func (c *AsyncIOCtx) makeActiveIO(cb *IOCB) *ActiveIO {
 	acio := newActiveIO(cb)
 	c.activeLock.Lock()
 	defer c.activeLock.Unlock()
@@ -73,14 +73,14 @@ func (c *AIOCtx) makeActiveIO(cb *IOCB) *ActiveIO {
 	return acio
 }
 
-func (c *AIOCtx) removeActiveIO(cb *IOCB) {
+func (c *AsyncIOCtx) removeActiveIO(cb *IOCB) {
 	c.activeLock.Lock()
 	defer c.activeLock.Unlock()
 
 	delete(c.activeIOs, unsafe.Pointer(cb))
 }
 
-func (c *AIOCtx) loop() {
+func (c *AsyncIOCtx) loop() {
 	for {
 		select {
 		case <-c.closeCh:
@@ -93,7 +93,7 @@ func (c *AIOCtx) loop() {
 	}
 }
 
-func (c *AIOCtx) waitEvents() error {
+func (c *AsyncIOCtx) waitEvents() error {
 	n, err := syscall_getevents(c.ioctx, 1, 2, c.events, c.timeout)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (c *AIOCtx) waitEvents() error {
 	return errs
 }
 
-func (c *AIOCtx) parseDoneEvent(event IOEvent) error {
+func (c *AsyncIOCtx) parseDoneEvent(event IOEvent) error {
 	c.activeLock.RLock()
 	defer c.activeLock.RUnlock()
 
@@ -124,7 +124,7 @@ func (c *AIOCtx) parseDoneEvent(event IOEvent) error {
 	return nil
 }
 
-func (c *AIOCtx) submitIO(cmd IOCmd, data []byte, off int64) (n int, err error) {
+func (c *AsyncIOCtx) submitIO(cmd IOCmd, data []byte, off int64) (n int, err error) {
 	cb := newIOCB(c.fd)
 
 	switch cmd {
@@ -147,7 +147,7 @@ func (c *AIOCtx) submitIO(cmd IOCmd, data []byte, off int64) (n int, err error) 
 	return int(acio.retBytes), nil
 }
 
-func (c *AIOCtx) Write(p []byte) (n int, err error) {
+func (c *AsyncIOCtx) Write(p []byte) (n int, err error) {
 	n, err = c.WriteAt(p, c.woff)
 	if err != nil {
 		return n, err
@@ -156,11 +156,11 @@ func (c *AIOCtx) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (c *AIOCtx) WriteAt(p []byte, off int64) (n int, err error) {
+func (c *AsyncIOCtx) WriteAt(p []byte, off int64) (n int, err error) {
 	return c.submitIO(IOCmdPwrite, p, off)
 }
 
-func (c *AIOCtx) Read(p []byte) (n int, err error) {
+func (c *AsyncIOCtx) Read(p []byte) (n int, err error) {
 	n, err = c.ReadAt(p, c.woff)
 	if err != nil {
 		return n, err
@@ -169,11 +169,11 @@ func (c *AIOCtx) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (c *AIOCtx) ReadAt(p []byte, off int64) (n int, err error) {
+func (c *AsyncIOCtx) ReadAt(p []byte, off int64) (n int, err error) {
 	return c.submitIO(IOCmdPread, p, off)
 }
 
-func (c *AIOCtx) Close() error {
+func (c *AsyncIOCtx) Close() error {
 	c.closeCh <- struct{}{}
 	<-c.closeCh
 

@@ -21,8 +21,8 @@ const (
 	SIZE_4K = 4096
 )
 
-func (s *LibAIOTestSuite) openAIOCtx(fpath string) goaio.IOCtx {
-	ctx, err := OpenAIOCtx(fpath, Options{
+func (s *LibAIOTestSuite) openAsyncIOCtx(fpath string) goaio.IOCtx {
+	ctx, err := New(fpath, Options{
 		IODepth: 1024,
 		Flag:    os.O_CREATE | os.O_RDWR | os.O_SYNC,
 		Perm:    0644,
@@ -35,7 +35,7 @@ func (s *LibAIOTestSuite) openAIOCtx(fpath string) goaio.IOCtx {
 
 func (s *LibAIOTestSuite) TestWriteAt() {
 	fpath := "/tmp/aio-test"
-	ctx := s.openAIOCtx(fpath)
+	ctx := s.openAsyncIOCtx(fpath)
 	buf, err := goaio.PosixMemAlign(SIZE_4K, SIZE_4K)
 	s.Nil(err)
 
@@ -58,7 +58,7 @@ func (s *LibAIOTestSuite) TestWriteAt() {
 
 func (s *LibAIOTestSuite) TestWrite() {
 	fpath := "/tmp/aio-test"
-	ctx := s.openAIOCtx(fpath)
+	ctx := s.openAsyncIOCtx(fpath)
 	buf, err := goaio.PosixMemAlign(SIZE_4K, SIZE_4K)
 	s.Nil(err)
 
@@ -96,7 +96,7 @@ func (s *LibAIOTestSuite) TestReadAt() {
 
 	fd.Close()
 
-	ctx := s.openAIOCtx(fpath)
+	ctx := s.openAsyncIOCtx(fpath)
 	buf, err := goaio.PosixMemAlign(SIZE_4K, SIZE_4K)
 	s.Nil(err)
 
@@ -125,7 +125,7 @@ func (s *LibAIOTestSuite) TestRead() {
 
 	fd.Close()
 
-	ctx := s.openAIOCtx(fpath)
+	ctx := s.openAsyncIOCtx(fpath)
 	buf, err := goaio.PosixMemAlign(SIZE_4K, SIZE_4K)
 	s.Nil(err)
 
