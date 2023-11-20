@@ -8,46 +8,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Passed in for io_uring_setup(2). Copied back with updated info on success
-type IOUringParams struct {
-	sq_entries     uint32
-	cq_entries     uint32
-	flags          uint32
-	sq_thread_cpu  uint32
-	sq_thread_idle uint32
-	features       uint32
-	wq_fd          uint32
-	resv           [3]uint32
-	sq_off         IOSqringOffsets
-	cq_off         IOCqringOffsets
-}
-
-type IOSqringOffsets struct {
-	head         uint32
-	tail         uint32
-	ring_mask    uint32
-	ring_entries uint32
-	flags        uint32
-	dropped      uint32
-	array        uint32
-	resv         [3]uint32
-}
-
-type IOCqringOffsets struct {
-	head         uint32
-	tail         uint32
-	ring_mask    uint32
-	ring_entries uint32
-	overflow     uint32
-	cqes         uint32
-	flags        uint32
-	resv         [3]uint32
-}
-
 // https://www.man7.org/linux/man-pages/man2/io_uring_setup.2.html
 // setup a context for performing asynchronous I/O
-func syscall_io_uring_setup(entries uint, params *IOUringParams) (int, error) {
-	res, _, errno := syscall.Syscall(
+func syscall_io_uring_setup(entries uint, params *io_uring_params) (int, error) {
+	res, _, errno := syscall.RawSyscall(
 		unix.SYS_IO_URING_SETUP,
 		uintptr(entries),
 		uintptr(unsafe.Pointer(params)),
